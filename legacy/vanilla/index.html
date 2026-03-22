@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic Tac Toe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body data-theme="dark">
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Tic Tac Toe</h1>
+        <p class="subtitle">Smooth animations, modern UI, and a tiny bit of sound.</p>
+      </div>
+
+      <div class="controls">
+        <div class="pill">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="twoPlayer" selected>Two Players (X vs O)</option>
+            <option value="vsComputer">Vs Computer (X vs AI)</option>
+          </select>
+        </div>
+
+        <button class="btn secondary" id="themeBtn" type="button" aria-label="Toggle dark/light mode">
+          Toggle Theme
+        </button>
+
+        <button class="btn secondary" id="soundBtn" type="button" aria-label="Toggle sound effects">
+          Sound: On
+        </button>
+      </div>
+    </header>
+
+    <section class="card" aria-label="Tic Tac Toe game">
+      <div class="cardInner">
+        <div class="topRow">
+          <div class="scoreboard" aria-label="Scoreboard">
+            <div class="scoreBox">
+              <div class="scoreLabel">Player X</div>
+              <div class="scoreValue"><span class="dot x"></span><span id="scoreX">0</span></div>
+            </div>
+            <div class="scoreBox">
+              <div class="scoreLabel">Player O</div>
+              <div class="scoreValue"><span class="dot o"></span><span id="scoreO">0</span></div>
+            </div>
+            <div class="scoreBox">
+              <div class="scoreLabel">Draws</div>
+              <div class="scoreValue"><span class="dot d"></span><span id="scoreD">0</span></div>
+            </div>
+          </div>
+
+          <div class="status" role="status" aria-live="polite">
+            <div class="statusText">
+              <div id="statusMain" class="fadeIn"><strong>Player X</strong> to move</div>
+              <div id="statusHint" class="hint">Make your move.</div>
+            </div>
+            <button class="btn primary" id="resetRoundBtn" type="button" title="Restart this round">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="boardArea">
+          <div class="boardWrap">
+            <!-- Winning line overlay -->
+            <svg class="winOverlay" id="winOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <line id="winLine" x1="0" y1="0" x2="0" y2="0"></line>
+            </svg>
+
+            <div class="board" id="board" role="grid" aria-label="Tic Tac Toe grid">
+              <!-- 9 cells -->
+              <button class="cell" type="button" data-index="0" aria-label="Cell 1"></button>
+              <button class="cell" type="button" data-index="1" aria-label="Cell 2"></button>
+              <button class="cell" type="button" data-index="2" aria-label="Cell 3"></button>
+              <button class="cell" type="button" data-index="3" aria-label="Cell 4"></button>
+              <button class="cell" type="button" data-index="4" aria-label="Cell 5"></button>
+              <button class="cell" type="button" data-index="5" aria-label="Cell 6"></button>
+              <button class="cell" type="button" data-index="6" aria-label="Cell 7"></button>
+              <button class="cell" type="button" data-index="7" aria-label="Cell 8"></button>
+              <button class="cell" type="button" data-index="8" aria-label="Cell 9"></button>
+            </div>
+          </div>
+
+          <div class="actions">
+            <div class="smallNote" id="modeNote">
+              Two Players: X goes first. In computer mode, you are X.
+            </div>
+            <div class="btnRow">
+              <button class="btn secondary" id="resetScoreBtn" type="button" title="Reset scoreboard">
+                Reset Score
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
