@@ -88,7 +88,32 @@ function hardFallbackMove(
   const block = findWinningMove(board, winLines, HUMAN_PLAYER);
   if (block !== null) return block;
 
+  const strategicWin = findStrategicMove(board, winLines, AI_PLAYER);
+  if (strategicWin !== null) return strategicWin;
+
+  const strategicBlock = findStrategicMove(board, winLines, HUMAN_PLAYER);
+  if (strategicBlock !== null) return strategicBlock;
+
   return mediumMove(board, size, winLines, empties);
+}
+
+function findStrategicMove(
+  board: Board,
+  winLines: readonly (readonly number[])[],
+  player: Player
+): number | null {
+  // Look for lines that have 2 or more player marks and are otherwise empty
+  for (let threshold = Math.max(2, winLines[0].length - 2); threshold >= 2; threshold--) {
+    for (const line of winLines) {
+      const marks = line.filter((i) => board[i] === player).length;
+      const empty = line.filter((i) => board[i] === "").length;
+      if (marks === threshold && empty === line.length - threshold) {
+        const idx = line.find((i) => board[i] === "");
+        if (idx !== undefined) return idx;
+      }
+    }
+  }
+  return null;
 }
 
 function minimaxBestMove(

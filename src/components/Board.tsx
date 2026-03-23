@@ -33,34 +33,41 @@ export function Board({
   const lineLen = winningLine?.length ?? 0;
 
   useLayoutEffect(() => {
-    if (!winningLine || lineLen < 2 || phase !== "won") {
-      setLineCoords((s) => ({ ...s, show: false }));
-      return;
-    }
+    const updateLine = () => {
+      if (!winningLine || lineLen < 2 || phase !== "won") {
+        setLineCoords((s) => ({ ...s, show: false }));
+        return;
+      }
 
-    const grid = boardRef.current;
-    const first = cellRefs.current[winningLine[0]];
-    const last = cellRefs.current[winningLine[lineLen - 1]];
-    if (!grid || !first || !last) return;
+      const grid = boardRef.current;
+      const first = cellRefs.current[winningLine[0]];
+      const last = cellRefs.current[winningLine[lineLen - 1]];
+      if (!grid || !first || !last) return;
 
-    const gridRect = grid.getBoundingClientRect();
-    const r1 = first.getBoundingClientRect();
-    const r2 = last.getBoundingClientRect();
+      const gridRect = grid.getBoundingClientRect();
+      const r1 = first.getBoundingClientRect();
+      const r2 = last.getBoundingClientRect();
 
-    const x1 = r1.left + r1.width / 2 - gridRect.left;
-    const y1 = r1.top + r1.height / 2 - gridRect.top;
-    const x2 = r2.left + r2.width / 2 - gridRect.left;
-    const y2 = r2.top + r2.height / 2 - gridRect.top;
-    const w = gridRect.width;
-    const h = gridRect.height;
+      const x1 = r1.left + r1.width / 2 - gridRect.left;
+      const y1 = r1.top + r1.height / 2 - gridRect.top;
+      const x2 = r2.left + r2.width / 2 - gridRect.left;
+      const y2 = r2.top + r2.height / 2 - gridRect.top;
+      const w = gridRect.width;
+      const h = gridRect.height;
 
-    setLineCoords({
-      x1: (x1 / w) * 100,
-      y1: (y1 / h) * 100,
-      x2: (x2 / w) * 100,
-      y2: (y2 / h) * 100,
-      show: true,
-    });
+      setLineCoords({
+        x1: (x1 / w) * 100,
+        y1: (y1 / h) * 100,
+        x2: (x2 / w) * 100,
+        y2: (y2 / h) * 100,
+        show: true,
+      });
+    };
+
+    updateLine();
+
+    window.addEventListener("resize", updateLine);
+    return () => window.removeEventListener("resize", updateLine);
   }, [winningLine, phase, board, lineLen]);
 
   const playable = phase === "playing" && !interactionLocked;
@@ -91,6 +98,7 @@ export function Board({
         aria-label={`Tic Tac Toe grid ${gridSize} by ${gridSize}`}
         style={{
           gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+          gridTemplateRows: `repeat(${gridSize}, 1fr)`,
           gap: `${gap}px`,
         }}
       >

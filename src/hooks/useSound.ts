@@ -49,9 +49,16 @@ export function useSound() {
     window.setTimeout(() => tone(250, 160, "triangle", 0.04), 120);
   }, [tone]);
 
+  const playLose = useCallback(() => {
+     if (!enabled) return;
+     const audio = new Audio("https://www.myinstants.com/media/sounds/failure-steven.mp3");
+     audio.volume = 0.5;
+     void audio.play();
+   }, [enabled]);
+
   const toggle = useCallback(() => {
     setEnabled((e) => !e);
   }, []);
 
-  return { enabled, toggle, playClick, playWin, playDraw };
+  return { enabled, toggle, playClick, playWin, playDraw, playLose };
 }

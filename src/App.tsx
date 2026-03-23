@@ -1,11 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Board } from "./components/Board";
 import { GameControls } from "./components/GameControls";
+import { GameHistory } from "./components/GameHistory";
 import { GameStatus } from "./components/GameStatus";
 import { Scoreboard } from "./components/Scoreboard";
 import { StatsPanel } from "./components/StatsPanel";
 import { TurnIndicator } from "./components/TurnIndicator";
-import type { GamePhase, GameSnapshot } from "./game/types";
+import type { GamePhase, GameSnapshot, Player } from "./game/types";
 import { AI_PLAYER, HUMAN_PLAYER } from "./game/types";
 import { useAiOpponent } from "./hooks/useAiOpponent";
 import type { GameSettings } from "./hooks/useGame";
@@ -28,7 +29,6 @@ export default function App() {
     setGridSize,
   } = useGame();
 
-  const { stats, recordVsAiResult, resetPersistent } = usePersistentStats();
   const { theme, toggle: toggleTheme } = useTheme();
   const {
     enabled: soundEnabled,
@@ -36,6 +36,7 @@ export default function App() {
     playClick,
     playWin,
     playDraw,
+    playLose,
   } = useSound();
 
   useAiOpponent(
@@ -53,7 +54,11 @@ export default function App() {
       prevPhaseSound.current === "playing" &&
       snapshot.phase === "won"
     ) {
-      playWin();
+      if (settings.mode === "vsComputer" && snapshot.winner === AI_PLAYER) {
+        playLose();
+      } else {
+        playWin();
+      }
     }
     if (
       prevPhaseSound.current === "playing" &&
@@ -62,34 +67,40 @@ export default function App() {
       playDraw();
     }
     prevPhaseSound.current = snapshot.phase;
-  }, [snapshot.phase, playWin, playDraw]);
+  }, [snapshot.phase, playWin, playDraw, playLose, settings.mode, snapshot.winner]);
 
-  const prevPhasePersist = useRef<GamePhase | null>(null);
-  useEffect(() => {
-    if (settings.mode !== "vsComputer") {
-      prevPhasePersist.current = snapshot.phase;
-      return;
-    }
-    if (
-      prevPhasePersist.current === "playing" &&
-      snapshot.phase === "won"
-    ) {
-      if (snapshot.winner === HUMAN_PLAYER) recordVsAiResult("win");
-      if (snapshot.winner === AI_PLAYER) recordVsAiResult("loss");
-    }
-    if (
-      prevPhasePersist.current === "playing" &&
-      snapshot.phase === "draw"
-    ) {
-      recordVsAiResult("draw");
-    }
-    prevPhasePersist.current = snapshot.phase;
-  }, [
-    settings.mode,
-    snapshot.phase,
-    snapshot.winner,
-    recordVsAiResult,
-  ]);
+  const { stats, recordVsAiResult, addHistoryEntry, resetPersistent } = usePersistentStats();
+
+  const prevPhaseHistory = useRef<GamePhase | null>(null);
+   useEffect(() => {
+     if (
+       prevPhaseHistory.current === "playing" &&
+       (snapshot.phase === "won" || snapshot.phase === "draw")
+     ) {
+       addHistoryEntry({
+         winner: snapshot.phase === "won" ? (snapshot.winner as Player) : "Draw",
+         gridSize: settings.gridSize,
+         mode: settings.mode,
+       });
+
+       if (settings.mode === "vsComputer") {
+         if (snapshot.phase === "won") {
+           if (snapshot.winner === HUMAN_PLAYER) recordVsAiResult("win");
+           if (snapshot.winner === AI_PLAYER) recordVsAiResult("loss");
+         } else if (snapshot.phase === "draw") {
+           recordVsAiResult("draw");
+         }
+       }
+     }
+     prevPhaseHistory.current = snapshot.phase;
+   }, [
+     snapshot.phase,
+     snapshot.winner,
+     settings.gridSize,
+     settings.mode,
+     addHistoryEntry,
+     recordVsAiResult,
+   ]);
 
   const humanLocked =
     settings.mode === "vsComputer" && snapshot.currentPlayer === "O";
@@ -101,96 +112,92 @@ export default function App() {
     playMove(index);
   };
 
-  const { title, hint } = statusContent(snapshot, settings);
+  const { title: statusTitle, hint: statusHint } = statusContent(snapshot, settings);
 
   return (
-    <div className="wrap">
-      <header>
-        <div className="headerTop">
+    <div className="game-container" data-theme={theme}>
+      <aside className="panel-left">
+        <header>
           <div className="title">
             <h1>Tic Tac Toe</h1>
-            <p className="subtitle">Local · AI · variable grid</p>
+            <p className="subtitle">Modern minimalist strategy</p>
           </div>
+        </header>
 
-          <div className="controls">
-            <button
-              className="btn secondary"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              onClick={toggleTheme}
-            >
+        <section className="section-controls">
+          <GameControls
+            mode={settings.mode}
+            difficulty={settings.difficulty}
+            gridSize={settings.gridSize}
+            onModeChange={setMode}
+            onDifficultyChange={setDifficulty}
+            onGridSizeChange={setGridSize}
+          />
+        </section>
+
+        <section className="section-stats">
+          <Scoreboard scores={scores} />
+          {settings.mode === "vsComputer" && (
+            <StatsPanel stats={stats} onResetLifetime={resetPersistent} />
+          )}
+        </section>
+
+        <footer className="panel-footer">
+          <div className="btnRow">
+            <button className="btn secondary" onClick={toggleTheme}>
               {theme === "dark" ? "Light" : "Dark"}
             </button>
+            <button className="btn secondary" onClick={toggleSound}>
+              {soundEnabled ? "Mute" : "Sound"}
+            </button>
             <button
               className="btn secondary"
-              type="button"
-              aria-label="Toggle sound"
-              onClick={toggleSound}
+              onClick={() => {
+                resetScores();
+                resetPersistent();
+              }}
             >
-              {soundEnabled ? "Sound on" : "Sound off"}
+              Reset All
             </button>
           </div>
+        </footer>
+      </aside>
+
+      <main className="game-main">
+        <div className="boardArea">
+          <Board
+            gridSize={snapshot.gridSize}
+            board={snapshot.board}
+            phase={snapshot.phase}
+            winningLine={snapshot.winningLine}
+            interactionLocked={humanLocked}
+            onCellClick={handleCellClick}
+          />
         </div>
+      </main>
 
-        <GameControls
-          mode={settings.mode}
-          difficulty={settings.difficulty}
-          gridSize={settings.gridSize}
-          onModeChange={setMode}
-          onDifficultyChange={setDifficulty}
-          onGridSizeChange={setGridSize}
-        />
-      </header>
-
-      <section className="card" aria-label="Tic Tac Toe game">
-        <div className="cardInner">
-          <div className="topRow">
-            <div>
-              <Scoreboard scores={scores} />
-              <StatsPanel
-                stats={stats}
-                onResetLifetime={resetPersistent}
-              />
-            </div>
-            <GameStatus title={title} hint={hint} onReset={resetRound} />
-          </div>
-
+      <aside className="panel-right">
+        <div className="status-container">
+          <GameStatus
+            title={statusTitle}
+            hint={statusHint}
+            onReset={resetRound}
+          />
           <TurnIndicator
             mode={settings.mode}
             phase={snapshot.phase}
             currentPlayer={snapshot.currentPlayer}
           />
-
-          <div className="boardArea">
-            <Board
-              gridSize={snapshot.gridSize}
-              board={snapshot.board}
-              phase={snapshot.phase}
-              winningLine={snapshot.winningLine}
-              interactionLocked={humanLocked}
-              onCellClick={handleCellClick}
-            />
-
-            <div className="actions">
-              <div className="smallNote">
-                {snapshot.gridSize}×{snapshot.gridSize} · {snapshot.winLength}{" "}
-                in a row
-                {settings.mode === "vsComputer" ? " · you are X" : ""}
-              </div>
-              <div className="btnRow">
-                <button
-                  className="btn secondary"
-                  type="button"
-                  title="Reset session scoreboard"
-                  onClick={resetScores}
-                >
-                  Reset session scores
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
-      </section>
+
+        <GameHistory history={stats.history} />
+
+        <div className="info-box">
+          <p className="smallNote">
+            {settings.gridSize}×{settings.gridSize} grid • {snapshot.winLength} to win
+          </p>
+        </div>
+      </aside>
     </div>
   );
 }

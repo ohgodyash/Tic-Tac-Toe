@@ -3,6 +3,7 @@ import type { Board, CellValue, GameSnapshot, GridSize, Player } from "./types";
 export function defaultWinLength(size: GridSize): number {
   if (size === 3) return 3;
   if (size === 4) return 4;
+  if (size === 5) return 5;
   return 4;
 }
 

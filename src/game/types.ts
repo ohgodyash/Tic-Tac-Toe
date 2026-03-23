@@ -29,11 +29,20 @@ export interface GameScores {
   D: number;
 }
 
+export interface GameHistoryEntry {
+  id: string;
+  winner: Player | "Draw";
+  gridSize: GridSize;
+  mode: GameMode;
+  timestamp: number;
+}
+
 /** Lifetime stats for vs-AI (human plays X) */
 export interface PersistentStats {
   wins: number;
   losses: number;
   draws: number;
+  history: GameHistoryEntry[];
 }
 
 export const HUMAN_PLAYER: Player = "X";
